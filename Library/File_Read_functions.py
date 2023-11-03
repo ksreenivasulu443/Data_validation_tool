@@ -7,26 +7,33 @@ spark = SparkSession.builder.master("local").appName("Files_read").getOrCreate()
 # df_parquet = spark.read.parquet("path")
 # df_avro = spark.read.avro("path")
 
-def read_file(format,path):
+import logging
+
+logging.basicConfig(filename="newfile.log",
+                    level=logging.INFO, #NDIWEC
+                    filemode='w',
+                    format='%(asctime)s:%(levelname)s:%(message)s')
+logger = logging.getLogger()
+
+def read_file(format,path,spark):
     if format.lower() == 'csv':
         source = spark.read.option("header", True).option("delimiter",",").csv(path)
+        logger.info(" info CSV file has read successfully from the below path" + path)
+
     elif format.lower() == 'json':
         source = spark.read.json(path)
     elif format.lower() == 'parquet':
         source = spark.read.parquet(path)
     elif format.lower() == 'avro':
         source = spark.read.avro(path)
+    else:
+        logger.critical("File format is not found ")
     return source
 
-def read_file1(format, path):
+def read_file1(format, path,spark):
     source = spark.read.format(format.lower()).load(path)
 
-source = read_file("csv", path ='/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/IPL Matches 2008-2020.csv')
-source.show()
 
-
-source_json = read_file("json", path ='/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/singleline.json')
-source_json.show()
 
 
 
