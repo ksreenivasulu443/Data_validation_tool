@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession
 from Library.File_Read_functions import read_file
 from Library.Database_Read_Functions import db_read
+from pyspark.sql.functions import count, when, isnan, isnull,col
 
 spark = SparkSession.builder.master("local").appName("Data val func").getOrCreate()
 
@@ -13,7 +14,6 @@ target = db_read(url="jdbc:oracle:thin:@//localhost:1521/freepdb1",username='sco
 #target.show()
 
 
-
 def count_validation(sourceDF, targetDF):
     source_count = sourceDF.count()
     target_count = targetDF.count()
@@ -22,11 +22,6 @@ def count_validation(sourceDF, targetDF):
     else:
         print("Source count and taget count is not matching and difference is",source_count-target_count)
 
-#count_validation(source, target)
-
-# dup_df = target.groupBy('empno').count().filter('count>1')
-#
-# dup_df.show()
 
 def duplicate(dataframe, key_column):
     dup_df = target.groupBy(key_column).count().filter('count>1')
@@ -36,5 +31,33 @@ def duplicate(dataframe, key_column):
     else:
         print("No duplicates")
 
-duplicate(target,"empno")
+def Uniquess_check(dataframe, unique_column):
+    for i in unique_column:
+        dup_df = target.groupBy(i).count().filter('count>1')
+        if dup_df.count()>0:
+            print(f"{i} columns has duplicate")
+            dup_df.show(10)
+        else:
+            print("All records has unique records")
+Uniquess_check(target,['EMPNO', 'ENAME'])
+
+def Null_value(dataframe, Null_columns):
+    for c in Null_columns:
+
+        Null_df = dataframe.select(count(when(col(c).contains('None') | \
+                                        col(c).contains('NULL') | \
+                                        (col(c) == '') | \
+                                        col(c).isNull() | \
+                                        isnan(c), c
+                                        )))
+        if Null_df.count()>0:
+            print(f"{c} columns has Null values")
+            Null_df.show(10)
+        else:
+                print("All records has unique records")
+Null_value(target,['COMM', 'ENAME'])
+
+
+
+
 
