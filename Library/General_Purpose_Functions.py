@@ -49,13 +49,13 @@ def Null_value(dataframe, Null_columns):
                                         (col(c) == '') | \
                                         col(c).isNull() | \
                                         isnan(c), c
-                                        )))
+                                        )).alias("Null_value_count"))
         if Null_df.count()>0:
             print(f"{c} columns has Null values")
             Null_df.show(10)
         else:
-                print("All records has unique records")
-Null_value(target,['COMM', 'ENAME'])
+                print("All records has no null records")
+
 
 
 
