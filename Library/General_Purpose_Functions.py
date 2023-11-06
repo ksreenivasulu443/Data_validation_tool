@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 from Library.File_Read_functions import read_file
 from Library.Database_Read_Functions import db_read
-from pyspark.sql.functions import count, when, isnan, isnull,col
+from pyspark.sql.functions import count, when, isnan, isnull, col, trim
 
 spark = SparkSession.builder.master("local").appName("Data val func").getOrCreate()
 
@@ -9,9 +9,9 @@ spark = SparkSession.builder.master("local").appName("Data val func").getOrCreat
 
 source = read_file(format="csv",path="/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/employee.csv", spark=spark)
 #source.show()
-print("#"*40)
+#print("#"*40)
 target = db_read(url="jdbc:oracle:thin:@//localhost:1521/freepdb1",username='scott',password='tiger',query="""select * from emp1 """,driver='oracle.jdbc.driver.OracleDriver')
-#target.show()
+target.show()
 
 
 def count_validation(sourceDF, targetDF):
@@ -39,7 +39,7 @@ def Uniquess_check(dataframe, unique_column):
             dup_df.show(10)
         else:
             print("All records has unique records")
-Uniquess_check(target,['EMPNO', 'ENAME'])
+#Uniquess_check(target,['EMPNO', 'ENAME'])
 
 def Null_value(dataframe, Null_columns):
     for c in Null_columns:
@@ -55,6 +55,45 @@ def Null_value(dataframe, Null_columns):
             Null_df.show(10)
         else:
                 print("All records has no null records")
+
+source.show()
+#Null_value(source,['bonus','Empno'])
+
+def data_compare( source, target,keycolumn):
+    for colname in source.columns:
+        source = source.withColumn(colname, trim(col(colname)))
+
+data_compare(source, target,keycolumn='empno')
+
+def records_present_only_in_target(source,target,keyList):
+    srctemp = source.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "SourceCount")
+    tartemp = target.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "TargetCount")
+    count_compare = srctemp.join(tartemp, keyList, how='full_outer')
+    count = count_compare.filter("SourceCount is null").count()
+    print("Key column record present in target but not in Source :" + str(count))
+    if count > 0:
+        count_compare.filter("SourceCount is null").show()
+    else:
+        print("No extra records present in source")
+
+def records_present_only_in_source(source,target,keyList):
+    srctemp = source.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "SourceCount")
+    tartemp = target.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "TargetCount")
+    count_compare = srctemp.join(tartemp, keyList, how='full_outer')
+    count = count_compare.filter("TargetCount is null").count()
+    print("Key column record present in Source but not in target :" + str(count))
+    if count > 0:
+        count_compare.filter("TargetCount is null").show()
+    else:
+        print("No extra records present")
+
+
+
+
+
+
+
+
 
 
 
