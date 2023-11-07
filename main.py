@@ -39,25 +39,19 @@ group_user = group_user.toPandas()
 with open(r'config/config.json','r') as f:
     config_file_data = json.loads(f.read())
 
-print(config_file_data)
-
 for key,value in group_user.iterrows():
      Source_file_info= value['Source_file_info']
      Source_Database_info = value['Source_Database_info']
      Target_file_info = value['Target_file_info']
      Target_Database_info= value['Target_Database_info']
-     print(Source_file_info,Source_Database_info)
-     print(Target_file_info,Target_Database_info)
      validations= value['Validation_Type']
      source_query = value['Source_Query']
-     Target_Query = value['Target_Query']
-     print(validations)
      if Source_file_info is not None:
           source_info= config_file_data[Source_file_info]
           path=source_info['path']
           format=source_info['file_type']
           source = read_file(format,path, spark)
-          #source.show()
+          source.show()
      else:
           source_info = config_file_data[Source_Database_info]
           db_Address= source_info['db_Address']
@@ -67,7 +61,7 @@ for key,value in group_user.iterrows():
           db_Name=  source_info['db_Name']
           db_driver = source_info['db_driver']
           source = db_read(db_Address,db_Username,db_Password,source_query,db_driver,spark)
-          #source.show()
+          source.show()
      if Target_Database_info is not None:
           target_info = config_file_data[Target_Database_info]
           print(target_info)
@@ -86,16 +80,22 @@ for key,value in group_user.iterrows():
           target = read_file(format,path, spark)
           target.show()
 
+     for i in validations:
+          print(i)
+          if i == 'count_validation':
+               count_validation(source, target)
+          elif i =='duplicate':
+               duplicate(target, ['Empno'])
+          elif i == 'Null_value_check':
+               Null_value_check(target,['Empno','comm'])
+          elif i =='Uniquess_check':
+               Uniquess_check(target,['Empno'])
 
+          elif i == 'records_present_only_in_source':
+               records_present_only_in_source(source, target,keyList=['Empno'])
 
+          elif i == 'records_present_only_in_target':
+               records_present_only_in_target(source, target,keyList=['Empno'])
 
-#      print(type(validations))
-#      source= read_oracle(spark)
-#      source.show()
-#      target = read_oracle(spark)
-#      for i in validations:
-#           print(i)
-#           if i == 'Count_Validation':
-#                count_validation(source, target,Out)
-#           elif i =='Duplicate':
-#                duplicate(source, target,['empno'],Out)
+          elif i == 'data_compare':
+               data_compare(source,target,'EMPNO')
