@@ -24,8 +24,8 @@ Test_cases = pd.read_excel("/Users/harish/PycharmProjects/Data_validation_tool/C
 print(Test_cases.shape)#
 
 print(Test_cases.columns)
-# Out = {"TC_ID":[], "test_Case_Name":[], "Number_of_source_Records":[], "Number_of_target_Records":[], "Number_of_failed_Records":[],"Status":[]}
-# schema= ["TC_ID", "test_Case_Name", "Number_of_source_Records", "Number_of_target_Records", "Number_of_failed_Records","Status"]
+Out = {"TC_ID":[], "test_Case_Name":[], "Number_of_source_Records":[], "Number_of_target_Records":[], "Number_of_failed_Records":[],"Status":[]}
+schema= ["TC_ID", "test_Case_Name", "Number_of_source_Records", "Number_of_target_Records", "Number_of_failed_Records","Status"]
 
 
 df = spark.createDataFrame(Test_cases)
@@ -83,19 +83,23 @@ for key,value in group_user.iterrows():
      for i in validations:
           print(i)
           if i == 'count_validation':
-               count_validation(source, target)
+               count_validation(source, target,Out)
           elif i =='duplicate':
-               duplicate(target, ['Empno'])
+               duplicate(target, ['Empno'],Out)
           elif i == 'Null_value_check':
-               Null_value_check(target,['Empno','comm'])
+               Null_value_check(target,['Empno','comm'],Out)
           elif i =='Uniquess_check':
-               Uniquess_check(target,['Empno'])
+               Uniquess_check(target,['Empno'],Out)
 
           elif i == 'records_present_only_in_source':
-               records_present_only_in_source(source, target,keyList=['Empno'])
+               records_present_only_in_source(source, target,['Empno'],Out)
 
           elif i == 'records_present_only_in_target':
-               records_present_only_in_target(source, target,keyList=['Empno'])
+               records_present_only_in_target(source, target,['Empno'],Out)
 
           elif i == 'data_compare':
-               data_compare(source,target,'EMPNO')
+               data_compare(source,target,'EMPNO',Out)
+
+Summary = pd.DataFrame(Out)
+print(Summary)
+spark.createDataFrame(Summary).show()

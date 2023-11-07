@@ -6,24 +6,30 @@ from pyspark.sql.functions import count, when, isnan, isnull, col, trim
 spark = SparkSession.builder.master("local").appName("Data val func").getOrCreate()
 
 
-def count_validation(sourceDF, targetDF):
+def count_validation(sourceDF, targetDF,Out):
     source_count = sourceDF.count()
     target_count = targetDF.count()
     if source_count == target_count:
         print("Source count and target count is matching and count is", source_count)
+        write_output(1,"Count_validation",source_count,target_count,"pass", source_count-target_count,Out)
     else:
         print("Source count and taget count is not matching and difference is",source_count-target_count)
+        write_output(1, "Count_validation", source_count, target_count, "fail", source_count - target_count, Out)
 
-def duplicate(dataframe, key_column):
+
+def duplicate(dataframe, key_column,Out):
     dup_df = dataframe.groupBy(key_column).count().filter('count>1')
+    target_count = dataframe.count()
     if dup_df.count()>0:
         print("Duplicates present")
         dup_df.show(10)
+        write_output(1, "duplicate", "NA", target_count, "Fail", dup_df.count(), Out)
     else:
         print("No duplicates")
+        write_output(1, "duplicate", "NA", target_count, "pass", 0, Out)
 
 
-def Uniquess_check(dataframe, unique_column):
+def Uniquess_check(dataframe, unique_column,Out):
     for column in unique_column:
         dup_df = dataframe.groupBy(column).count().filter('count>1')
         if dup_df.count()>0:
@@ -32,7 +38,7 @@ def Uniquess_check(dataframe, unique_column):
         else:
             print("All records has unique records")
 
-def Null_value_check(dataframe, Null_columns):
+def Null_value_check(dataframe, Null_columns,Out):
     for column in Null_columns:
         Null_df = dataframe.select(count(when(col(column).contains('None') | \
                                         col(column).contains('NULL') | \
@@ -49,7 +55,7 @@ def Null_value_check(dataframe, Null_columns):
                 print("No null records present")
 
 
-def records_present_only_in_target(source,target,keyList):
+def records_present_only_in_target(source,target,keyList,Out):
     srctemp = source.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "SourceCount")
     tartemp = target.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "TargetCount")
     count_compare = srctemp.join(tartemp, keyList, how='full_outer')
@@ -60,7 +66,7 @@ def records_present_only_in_target(source,target,keyList):
     else:
         print("No extra records present in source")
 
-def records_present_only_in_source(source,target,keyList):
+def records_present_only_in_source(source,target,keyList,Out):
     srctemp = source.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "SourceCount")
     tartemp = target.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "TargetCount")
     count_compare = srctemp.join(tartemp, keyList, how='full_outer')
@@ -71,7 +77,7 @@ def records_present_only_in_source(source,target,keyList):
     else:
         print("No extra records present")
 
-def data_compare( source, target,keycolumn):
+def data_compare( source, target,keycolumn,Out):
     for colname in source.columns:
         source = source.withColumn(colname, trim(col(colname)))
 
@@ -87,7 +93,13 @@ def data_compare( source, target,keycolumn):
                                                     "True" ).otherwise("False")).show()
 
 
-
+def write_output(TC_ID,Test_Case_Name,Number_of_source_Records,Number_of_target_Records,Status,Number_of_failed_Records,Out):
+    Out["TC_ID"].append(TC_ID)
+    Out["test_Case_Name"].append(Test_Case_Name)
+    Out["Number_of_source_Records"].append(Number_of_source_Records)
+    Out["Number_of_target_Records"].append(Number_of_target_Records)
+    Out["Status"].append(Status)
+    Out["Number_of_failed_Records"].append(Number_of_failed_Records)
 
 
 
