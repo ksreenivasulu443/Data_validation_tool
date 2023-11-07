@@ -23,22 +23,26 @@ def duplicate(dataframe, key_column,Out):
     if dup_df.count()>0:
         print("Duplicates present")
         dup_df.show(10)
-        write_output(1, "duplicate", "NA", target_count, "Fail", dup_df.count(), Out)
+        write_output(2, "duplicate", "NA", target_count, "Fail", dup_df.count(), Out)
     else:
         print("No duplicates")
-        write_output(1, "duplicate", "NA", target_count, "pass", 0, Out)
+        write_output(2, "duplicate", "NA", target_count, "pass", 0, Out)
 
 
 def Uniquess_check(dataframe, unique_column,Out):
+    target_count = dataframe.count()
     for column in unique_column:
         dup_df = dataframe.groupBy(column).count().filter('count>1')
         if dup_df.count()>0:
             print(f"{column} columns has duplicate")
             dup_df.show(10)
+            write_output(3, "Uniqueness", "NA", target_count, "Fail", dup_df.count(), Out)
         else:
             print("All records has unique records")
+            write_output(3, "Uniqueness", "NA", target_count, "Pass", 0, Out)
 
 def Null_value_check(dataframe, Null_columns,Out):
+    target_count = dataframe.count()
     for column in Null_columns:
         Null_df = dataframe.select(count(when(col(column).contains('None') | \
                                         col(column).contains('NULL') | \
@@ -48,11 +52,18 @@ def Null_value_check(dataframe, Null_columns,Out):
                                         isnan(column), column
                                         )).alias("Null_value_count"))
         cnt = Null_df.collect()
+
         if cnt[0][0]>=1:
             print(f"{column} columns has Null values")
             Null_df.show(10)
+            write_output(4, "Null_value_check", "NA", target_count, "fail", cnt[0][0], Out)
+
+
         else:
-                print("No null records present")
+            print("No null records present")
+            write_output(4, "Null_value_check", "NA", target_count, "pass", 0, Out)
+
+
 
 
 def records_present_only_in_target(source,target,keyList,Out):
