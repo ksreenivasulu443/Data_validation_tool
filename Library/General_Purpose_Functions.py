@@ -53,9 +53,10 @@ def Null_value(dataframe, Null_columns):
                                         col(column).isNull() | \
                                         isnan(column), column
                                         )).alias("Null_value_count"))
-        #Null_df.show()
+        cnt = Null_df.collect()
+        #print(cnt[0][0])
         #print("Count of null",Null_df.count())
-        if Null_df.count()>=1:
+        if cnt[0][0]>=1:
             print(f"{column} columns has Null values")
             Null_df.show(10)
         else:
@@ -63,7 +64,7 @@ def Null_value(dataframe, Null_columns):
 
 
 #source.show()
-#Null_value(source,['bonus','deptno'])
+Null_value(source,['bonus','deptno'])
 
 
 
@@ -104,7 +105,7 @@ def data_compare( source, target,keycolumn):
             temp_join.withColumn("comparison", when(col('source_'+column) == col("target_"+column),\
                                                     "True" ).otherwise("False")).show()
 
-data_compare(source, target,'Empno')
+#data_compare(source, target,'Empno')
 
 
 
