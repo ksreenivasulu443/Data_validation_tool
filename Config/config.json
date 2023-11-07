@@ -1,11 +1,17 @@
 {
-  "Source": {
-    "Source_path": "/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/singleline.json"
+  "emp_file": {
+    "path": "Source_Files/employee.csv",
+    "file_type" : "csv"
   },
-  "oracle":
+
+  "oracle_db":
   {
-    "url": "",
-    "username": "",
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver"
 
   }
 }

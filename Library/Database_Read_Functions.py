@@ -1,10 +1,7 @@
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.master("local")\
-    .appName("test").getOrCreate()
 
 
-def db_read(url,username, password,query,driver):
+
+def db_read(url,username, password,query,driver,spark):
     df= spark.read.format("jdbc"). \
         option("url", url). \
         option("password", password). \
@@ -13,7 +10,7 @@ def db_read(url,username, password,query,driver):
         option("driver", driver).load()
     return df
 
-def kafka_read():
+def kafka_read(spark):
     df = spark \
         .readStream \
         .format("kafka") \
@@ -22,6 +19,24 @@ def kafka_read():
         .option("includeHeaders", "true") \
         .load()
     return df
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #

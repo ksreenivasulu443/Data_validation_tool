@@ -1,11 +1,3 @@
-from pyspark.sql import SparkSession
-
-spark = SparkSession.builder.master("local").appName("Files_read").getOrCreate()
-
-# df_csv = spark.read.option("header", True).option("delimiter",",").csv("path")
-# df_json = spark.read.option("multiline", True).json("path")
-# df_parquet = spark.read.parquet("path")
-# df_avro = spark.read.avro("path")
 
 import logging
 
@@ -18,14 +10,19 @@ logger = logging.getLogger()
 def read_file(format,path,spark):
     if format.lower() == 'csv':
         source = spark.read.option("header", True).option("delimiter",",").csv(path)
-        logger.info(" info CSV file has read successfully from the below path" + path)
+        logger.info("CSV file has read successfully from the below path" + path)
 
     elif format.lower() == 'json':
         source = spark.read.json(path)
+        logger.info("Json file has read successfully from the below path" + path)
+
     elif format.lower() == 'parquet':
         source = spark.read.parquet(path)
+        logger.info("parquet file has read successfully from the below path" + path)
+
     elif format.lower() == 'avro':
         source = spark.read.avro(path)
+        logger.info("Avro file has read successfully from the below path" + path)
     else:
         logger.critical("File format is not found ")
     return source

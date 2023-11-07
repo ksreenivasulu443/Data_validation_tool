@@ -32,7 +32,7 @@ def Uniquess_check(dataframe, unique_column):
         else:
             print("All records has unique records")
 
-def Null_value(dataframe, Null_columns):
+def Null_value_check(dataframe, Null_columns):
     for column in Null_columns:
         Null_df = dataframe.select(count(when(col(column).contains('None') | \
                                         col(column).contains('NULL') | \
