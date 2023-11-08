@@ -3,8 +3,26 @@
     "path": "Source_Files/employee.csv",
     "file_type" : "csv"
   },
+  "dept_file": {
+    "path": "Source_Files/dept.csv",
+    "file_type" : "csv"
+  },
+  "emp_file2": {
+    "path": "Source_Files/employee.json",
+    "file_type" : "json"
+  },
 
   "oracle_db":
+  {
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver"
+
+  },
+  "postgre_db":
   {
     "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
     "db_Port":	1521,

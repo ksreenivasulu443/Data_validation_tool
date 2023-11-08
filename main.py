@@ -82,7 +82,7 @@ for key,value in group_user.iterrows():
 
      for i in validations:
           print(i)
-          if i == 'count_validation':
+          if i == 'count_validation' :
                count_validation(source, target,Out)
           elif i =='duplicate':
                duplicate(target, ['Empno'],Out)
@@ -101,5 +101,7 @@ for key,value in group_user.iterrows():
                data_compare(source,target,'EMPNO',Out)
 
 Summary = pd.DataFrame(Out)
-print(Summary)
-spark.createDataFrame(Summary).show()
+
+Summary = spark.createDataFrame(Summary)
+Summary.show()
+Summary.write.csv("/Users/harish/PycharmProjects/Data_validation_tool/Output/Summary", mode='append', header="True")

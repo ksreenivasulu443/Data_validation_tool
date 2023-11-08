@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 from Library.File_Read_functions import read_file
 from Library.Database_Read_Functions import db_read
-from pyspark.sql.functions import count, when, isnan, isnull, col, trim
+from pyspark.sql.functions import abs,count, when, isnan, isnull, col, trim
 
 spark = SparkSession.builder.master("local").appName("Data val func").getOrCreate()
 
@@ -11,7 +11,7 @@ def count_validation(sourceDF, targetDF,Out):
     target_count = targetDF.count()
     if source_count == target_count:
         print("Source count and target count is matching and count is", source_count)
-        write_output(1,"Count_validation",source_count,target_count,"pass", source_count-target_count,Out)
+        write_output(1,"Count_validation",source_count,target_count,"pass", 0,Out)
     else:
         print("Source count and taget count is not matching and difference is",source_count-target_count)
         write_output(1, "Count_validation", source_count, target_count, "fail", source_count - target_count, Out)
@@ -44,13 +44,15 @@ def Uniquess_check(dataframe, unique_column,Out):
 def Null_value_check(dataframe, Null_columns,Out):
     target_count = dataframe.count()
     for column in Null_columns:
-        Null_df = dataframe.select(count(when(col(column).contains('None') | \
-                                        col(column).contains('NULL') | \
-                                        col(column).contains('Null') | \
-                                        (col(column) == '') | \
-                                        col(column).isNull() | \
-                                        isnan(column), column
-                                        )).alias("Null_value_count"))
+        # Null_df = dataframe.select(count(when(col(column).contains('None') | \
+        #                                 col(column).contains('NULL') | \
+        #                                 col(column).contains('Null') | \
+        #                                 (col(column) == '') | \
+        #                                 col(column).isNull() | \
+        #                                 isnan(column), column
+        #                                 )).alias("Null_value_count"))
+        dataframe.createOrReplaceTempView("dataframe")
+        Null_df = spark.sql("select count(*) source_cnt from dataframe where comm is null")
         cnt = Null_df.collect()
 
         if cnt[0][0]>=1:
