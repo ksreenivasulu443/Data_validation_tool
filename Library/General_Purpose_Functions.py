@@ -72,21 +72,33 @@ def records_present_only_in_target(source,target,keyList,Out):
     count_compare = srctemp.join(tartemp, keyList, how='full_outer')
     count = count_compare.filter("SourceCount is null").count()
     print("Key column record present in target but not in Source :" + str(count))
+    source_count =source.count()
+    target_count = target.count()
     if count > 0:
         count_compare.filter("SourceCount is null").show()
+        write_output(5, "records_present_only_in_target", source_count, target_count, "fail", source_count - target_count, Out)
     else:
         print("No extra records present in source")
+        write_output(5, "records_present_only_in_target", source_count, target_count, "Pass", 0, Out)
+
 
 def records_present_only_in_source(source,target,keyList,Out):
     srctemp = source.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "SourceCount")
     tartemp = target.select(keyList).groupBy(keyList).count().withColumnRenamed("count", "TargetCount")
     count_compare = srctemp.join(tartemp, keyList, how='full_outer')
     count = count_compare.filter("TargetCount is null").count()
+    source_count = source.count()
+    target_count = target.count()
     print("Key column record present in Source but not in target :" + str(count))
     if count > 0:
         count_compare.filter("TargetCount is null").show()
+        write_output(6, "records_present_only_in_source", source_count, target_count, "fail",
+                     source_count - target_count, Out)
+
     else:
         print("No extra records present")
+        write_output(6, "records_present_only_in_target", source_count, target_count, "Pass", 0, Out)
+
 
 def data_compare( source, target,keycolumn,Out):
     for colname in source.columns:
