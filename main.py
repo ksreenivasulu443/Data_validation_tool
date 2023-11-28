@@ -11,7 +11,7 @@ import openpyxl
 from pyspark.sql.functions import collect_set
 
 jar_path='/Users/harish/Downloads/spark-3.4.1-bin-hadoop3/jars/sqljdbc4-2.0.jar'
-spark = SparkSession.builder.master("local").appName("test")\
+spark = SparkSession.builder.master("local").appName("test_execution")\
      .config("spark.jars", "/Users/harish/Downloads/spark-3.4.1-bin-hadoop3/jars/ojdbc8-21.5.0.0.jar") \
      .config("spark.driver.extraClassPath", "/Users/harish/Downloads/spark-3.4.1-bin-hadoop3/jars/ojdbc8-21.5.0.0.jar") \
      .config("spark.executor.extraClassPath","/Users/harish/Downloads/spark-3.4.1-bin-hadoop3/jars/ojdbc8-21.5.0.0.jar") \
@@ -35,6 +35,8 @@ group_user = df.groupBy('Source_file_info','Source_Database_info','Source_Query'
 
 group_user.show(truncate=False)
 group_user = group_user.toPandas()
+
+
 
 with open(r'config/config.json','r') as f:
     config_file_data = json.loads(f.read())

@@ -52,7 +52,7 @@ def Null_value_check(dataframe, Null_columns,Out):
         #                                 isnan(column), column
         #                                 )).alias("Null_value_count"))
         dataframe.createOrReplaceTempView("dataframe")
-        Null_df = spark.sql("select count(*) source_cnt from dataframe where comm is null")
+        Null_df = spark.sql(f"select count(*) source_cnt from dataframe where {column} is null")
         cnt = Null_df.collect()
 
         if cnt[0][0]>=1:
