@@ -31,5 +31,61 @@
     "db_Name":"freepdb1",
     "db_driver": "oracle.jdbc.driver.OracleDriver"
 
+  },
+  "contact_file": {
+    "path": "/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/Contact_info.csv",
+    "file_type" : "csv"
+  },
+  "contact_info":
+  {
+    "source_file": "/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/Contact_info.csv",
+    "source_file_type" : "csv",
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver",
+    "query": "select * from contact_info_raw",
+    "Key_column": ["Identifier"],
+    "raw_query" : " select * from contact_info_raw",
+    "bronze_query" : " select * from contact_info_bronze",
+    "silver_query" : " select * from contact_info_silver"
+  },
+  "contact_info_raw":
+  {
+    "source_file": "/Users/harish/PycharmProjects/Data_validation_tool/Source_Files/Contact_info.csv",
+    "source_file_type" : "csv",
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver",
+    "query": "select * from contact_info_raw",
+    "Key_column": ["Identifier"]
+  },
+  "contact_info_bronze":
+  {
+
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver",
+    "query": "select * from contact_info_bronze",
+    "Key_column": ["Identifier"]
+  },
+  "contact_info_silver":
+  {
+    "db_Address":"jdbc:oracle:thin:@//localhost:1521/freepdb1",
+    "db_Port":	1521,
+    "db_Username":	"scott",
+    "db_Password":	"tiger",
+    "db_Name":"freepdb1",
+    "db_driver": "oracle.jdbc.driver.OracleDriver",
+    "query": " select * from contact_info_silver",
+    "Key_column": ["Identifier","current_ind"]
   }
 }

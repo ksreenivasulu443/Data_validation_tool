@@ -2,8 +2,29 @@ from pyspark.sql import SparkSession
 from Library.File_Read_functions import read_file
 from Library.Database_Read_Functions import db_read
 from pyspark.sql.functions import abs,count, when, isnan, isnull, col, trim
+import datetime
+import json
+import sys
 
-spark = SparkSession.builder.master("local").appName("Data val func").getOrCreate()
+import pandas as pd
+
+from pyspark.sql import SQLContext, SparkSession
+from pyspark.sql import Window
+from pyspark.sql import functions as F
+from pyspark.sql.functions import explode_outer, concat, col, \
+    trim,to_date, lpad, lit, count,max, min, explode
+from pyspark.sql.types import IntegerType
+import os
+import smtplib
+from itertools import chain
+from string import Template
+from pyspark.sql.column import Column
+from pyspark.sql.functions import create_map, isnull, col, when, lit, abs
+from pyspark.sql import types as t
+from subprocess import PIPE, Popen
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
 
 def count_validation(sourceDF, targetDF,Out):
@@ -44,15 +65,15 @@ def Uniquess_check(dataframe, unique_column,Out):
 def Null_value_check(dataframe, Null_columns,Out):
     target_count = dataframe.count()
     for column in Null_columns:
-        # Null_df = dataframe.select(count(when(col(column).contains('None') | \
-        #                                 col(column).contains('NULL') | \
-        #                                 col(column).contains('Null') | \
-        #                                 (col(column) == '') | \
-        #                                 col(column).isNull() | \
-        #                                 isnan(column), column
-        #                                 )).alias("Null_value_count"))
-        dataframe.createOrReplaceTempView("dataframe")
-        Null_df = spark.sql(f"select count(*) source_cnt from dataframe where {column} is null")
+        Null_df = dataframe.select(count(when(col(column).contains('None') | \
+                                        col(column).contains('NULL') | \
+                                        col(column).contains('Null') | \
+                                        (col(column) == '') | \
+                                        col(column).isNull() | \
+                                        isnan(column), column
+                                        )).alias("Null_value_count"))
+        # dataframe.createOrReplaceTempView("dataframe")
+        # Null_df = spark.sql(f"select count(*) source_cnt from dataframe where {column} is null")
         cnt = Null_df.collect()
 
         if cnt[0][0]>=1:
@@ -117,6 +138,124 @@ def data_compare( source, target,keycolumn,Out):
             temp_join.withColumn("comparison", when(col('source_'+column) == col("target_"+column),\
                                                     "True" ).otherwise("False")).show()
 
+def compare(source, target,countQA, keyList,Out):
+    sourceDaraFrame = source
+    targetDataFrame = target
+    for colname in sourceDaraFrame.columns:
+        sourceDaraFrame = sourceDaraFrame.withColumn(colname, trim(col(colname)))
+
+    for colname in targetDataFrame.columns:
+        targetDataFrame = targetDataFrame.withColumn(colname, trim(col(colname)))
+    match_stats = []
+    sampleCount = 10
+    columnList = sourceDaraFrame.columns
+    subStringMap = {}
+    Summary = {"Column": [], "Total": [], "Matchcount": [], "Mismatchcount": [], "Mismatchcountper": []}
+    report = "Column_Name" + "\t" + "Match_count" + "\t" + "mismatch_count" + "\t" + "Mismatch_percentage"
+    for column in columnList:
+        try:
+            subString = subStringMap.__getitem__(column)
+        except:
+            subString = ''
+        if column not in keyList:
+            matchcount, a, b = run_compare_for_column(keyList, column, sourceDaraFrame, targetDataFrame, sampleCount,
+                                                      subString)
+            mismatchcount = countQA - matchcount
+            mismatchcountper = mismatchcount * 100 / float(countQA)
+            Summary['Column'].append(column)
+            Summary['Total'].append(countQA)
+            Summary['Matchcount'].append(matchcount)
+            Summary['Mismatchcount'].append(mismatchcount)
+            Summary['Mismatchcountper'].append(mismatchcountper)
+    Summary = pd.DataFrame(Summary)
+    if Summary.Mismatchcount.sum() > 0:
+        write_output(5,"Datavalidation", countQA, countQA,"FAIL",Summary.Mismatchcount.sum(),Out)
+    else:
+        write_output(5, "Datavalidation", countQA, countQA, "PASS", 0, Out)
+    return Summary
+
+def get_dataset (keyList, keyDict, dataframe):
+    var_dict = {}
+    condition = ''
+    #print keyDict
+    i=0
+    for key, val in keyDict.items():
+        if i > 0:
+            condition = str(key) + " == '" + str(val) + "' and " + condition
+            #print("Condition inside if " , condition)
+        else:
+            condition = str(key) + " == '" + str(val) + "'"
+            #print("Condition inside elif " ,condition)
+        i = i + 1
+    var_dict.__setitem__('condition', condition)
+    var_dict.__setitem__('dataframe', [k for k,v in locals().items() if v == dataframe][0])
+    command = '''$dataframe.filter("$condition").show(20, False)'''
+    #print(command)
+    command = Template(command).substitute(var_dict)
+    #print(command)
+    eval(command)
+    print("\n\n")
+
+def run_compare_for_column(keyList, column, sourceDataFrame, targetDataFrame, sampleCount, substring, tolerance=None):
+    print("Validation for column - " + column )
+    var_dict = {}
+    var_dict.__setitem__('keyList', keyList)
+    var_dict.__setitem__('column', column)
+    var_dict.__setitem__('sourceDataFrame', [k for k, v in locals().items() if v == sourceDataFrame][0])
+    var_dict.__setitem__('targetDataFrame', [k for k, v in locals().items() if v == targetDataFrame][0])
+    var_dict.__setitem__('substring', substring)
+    var_dict.__setitem__('samplecount', sampleCount)
+    var_dict.__setitem__('tolerance', tolerance)
+    if tolerance is None:
+        command = '''$sourceDataFrame.join($targetDataFrame, $keyList, how="fullouter").filter((($sourceDataFrame.$column.isNotNull()) &
+         ($targetDataFrame.$column.isNotNull()) | ($sourceDataFrame.$column.isNull()) & ($targetDataFrame.$column.isNull()))).select("''' + ('" , "').join(keyList) + '''", $sourceDataFrame.$column, $targetDataFrame.$column,
+         F.when(trim($sourceDataFrame.$column$substring) == trim($targetDataFrame.$column$substring),"True").
+         otherwise("False").alias('Diff_$column')).filter("Diff_$column == False").count()'''
+
+    else:
+        command = '''$sourceDataFrame.join($targetDataFrame, $keyList, how="fullouter").filter((($sourceDataFrame.$column.isNotNull()) &
+         ($targetDataFrame.$column.isNotNull()) | ($sourceDataFrame.$column.isNull()) & ($targetDataFrame.$column.isNull()))).select("''' + ('" , "').join(keyList) + '''", $sourceDataFrame.$column, $targetDataFrame.$column,
+         F.when(trim($sourceDataFrame.$column$substring) == trim($targetDataFrame.$column$substring),"True").
+         otherwise("False").alias('Diff_$column')).count()'''
+    command = Template(command).substitute(var_dict)
+    count = eval(command)
+    Mismatchcount = count
+    print("Data is not matching for "+str(Mismatchcount) + " records" + "\n")
+    if count > 0:
+        if tolerance is None:
+            command = '''$sourceDataFrame.join($targetDataFrame, $keyList, how="fullouter").filter((($sourceDataFrame.$column.isNotNull()) &
+         ($targetDataFrame.$column.isNotNull()) | ($sourceDataFrame.$column.isNull()) & ($targetDataFrame.$column.isNull()))).select("''' + ('" , "').join(keyList) + '''", $sourceDataFrame.$column, $targetDataFrame.$column,
+         F.when(trim($sourceDataFrame.$column$substring) == trim($targetDataFrame.$column$substring),"True").
+         otherwise("False").alias('Diff_$column')).filter("Diff_$column == False")'''
+        else:
+            command = '''$sourceDataFrame.join($targetDataFrame, $keyList, how="fullouter").filter((($sourceDataFrame.$column.isNotNull()) &
+                     ($targetDataFrame.$column.isNotNull()) | ($sourceDataFrame.$column.isNull()) & ($targetDataFrame.$column.isNull()))).select("''' + (
+                '" , "').join(keyList) + '''", $sourceDataFrame.$column, $targetDataFrame.$column,
+                     F.when(trim($sourceDataFrame.$column$substring) == trim($targetDataFrame.$column$substring),"True").
+                     otherwise("False").alias('Diff_$column))'''
+        command = Template(command).substitute(var_dict)
+        sampleData= eval(command)
+        #sampleData.columns=[[sampleData.columns[0],'Source','Target','dfii']]
+        sampleData.show(10)
+        #sampleData.show(sampleCount, False)
+        print("Sample mismatch records " + ",".join(keyList) )
+        print('-----------------------------------------------')
+        keyListdata = sampleData.select(keyList).first().asDict()
+        print('Source dataFrame details')
+        get_dataset(keyList,keyListdata, sourceDataFrame)
+        print("Target dataFrame details")
+        get_dataset(keyList, keyListdata, targetDataFrame)
+
+    if tolerance is None:
+        command = '''$sourceDataFrame.join($targetDataFrame, $keyList, how="fullouter").filter((($sourceDataFrame.$column.isNotNull()) & 
+        ($targetDataFrame.$column.isNotNull()) | ($sourceDataFrame.$column.isNull()) & ($targetDataFrame.$column.isNull()))).select("''' + ('" , "').join(keyList) + '''", $sourceDataFrame.$column, $targetDataFrame.$column,F.when(trim($sourceDataFrame.$column$substring) == trim($targetDataFrame.$column$substring),"True").
+        otherwise("False").alias('Diff_$column')).filter("Diff_$column == True").count()'''
+        command = Template(command).substitute(var_dict)
+        #print(command)
+        count = eval(command)
+        matched_count = count
+        #print("Data is not exactly matching for " + str(matched_count))
+    return matched_count,Mismatchcount, matched_count+Mismatchcount
 
 def write_output(TC_ID,Test_Case_Name,Number_of_source_Records,Number_of_target_Records,Status,Number_of_failed_Records,Out):
     Out["TC_ID"].append(TC_ID)

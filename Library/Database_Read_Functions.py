@@ -10,6 +10,16 @@ def db_read(url,username, password,query,driver,spark):
         option("driver", driver).load()
     return df
 
+def db_write(df,url,username, password,table,driver,spark):
+    df.write.mode("overwrite") \
+        .format("jdbc") \
+        .option("url", url) \
+        .option("driver", driver) \
+        .option("dbtable", table) \
+        .option("user", username) \
+        .option("password", password) \
+        .save()
+
 def kafka_read(spark):
     df = spark \
         .readStream \

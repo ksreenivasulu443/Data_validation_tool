@@ -20,8 +20,8 @@ spark = SparkSession.builder.master("local").appName("test_execution")\
 # df= spark.read.csv("/Users/harish/PycharmProjects/AutomationSept2/Config17.csv", header=True,sep=",")
 # df.show()
 
-Test_cases = pd.read_excel("/Users/harish/PycharmProjects/Data_validation_tool/Config/Master_Test_Template.xlsx")
-print(Test_cases.shape)#
+Test_cases = pd.read_excel("/Users/harish/PycharmProjects/Data_validation_tool/Config/Master_Test_Template2.xlsx")
+print(Test_cases)
 
 print(Test_cases.columns)
 Out = {"TC_ID":[], "test_Case_Name":[], "Number_of_source_Records":[], "Number_of_target_Records":[], "Number_of_failed_Records":[],"Status":[]}
@@ -48,7 +48,7 @@ for key,value in group_user.iterrows():
      Target_Database_info= value['Target_Database_info']
      validations= value['Validation_Type']
      source_query = value['Source_Query']
-     if Source_file_info is not None:
+     if Source_file_info!='NotApp':
           source_info= config_file_data[Source_file_info]
           path=source_info['path']
           format=source_info['file_type']
@@ -64,7 +64,7 @@ for key,value in group_user.iterrows():
           db_driver = source_info['db_driver']
           source = db_read(db_Address,db_Username,db_Password,source_query,db_driver,spark)
           source.show()
-     if Target_Database_info is not None:
+     if Target_Database_info!='NotApp':
           target_info = config_file_data[Target_Database_info]
           print(target_info)
           db_Address = target_info['db_Address']
@@ -87,7 +87,7 @@ for key,value in group_user.iterrows():
           if i == 'count_validation' :
                count_validation(source, target,Out)
           elif i =='duplicate':
-               duplicate(target, ['Empno'],Out)
+               duplicate(target, ['Identifier'],Out)
           elif i == 'Null_value_check':
                Null_value_check(target,['Empno','comm'],Out)
           elif i =='Uniquess_check':
@@ -103,8 +103,7 @@ for key,value in group_user.iterrows():
                data_compare(source,target,'EMPNO',Out)
 
 Summary = pd.DataFrame(Out)
-# This code comment
-# This comment2
+
 
 Summary = spark.createDataFrame(Summary)
 Summary.show()
